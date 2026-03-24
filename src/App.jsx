@@ -38,32 +38,44 @@ const AiChat = () => {
   useEffect(() => { if (open) setTimeout(() => setVisible(true), 10); else setVisible(false); }, [open]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior:'smooth' }); }, [msgs, loading]);
 
+  
   const send = async () => {
     if (!input.trim() || loading) return;
-    const userMsg = { role:'user', content: input.trim() };
-    const history = [...msgs, userMsg];
-    setMsgs(history);
-    setInput('');
+    const userMsg = { role: "user", content: input.trim() };
+    
+    // Build history for Gemini
+    const history = [...msgs.slice(1), userMsg].map(m => ({ 
+      role: m.role === "assistant" ? "model" : "user", 
+      parts: [{ text: m.content }] 
+    }));
+    
+    setMsgs(p => [...p, userMsg]);
+    setInput("");
     setLoading(true);
+
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          model:'claude-sonnet-4-6',
-          max_tokens:1000,
-          system: SYS_PROMPT,
-          messages: history.map(m => ({ role:m.role, content:m.content }))
-        })
+      const apiKey = ""; // Environment provides key automatically
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      
+      const payload = {
+        systemInstruction: { parts: [{ text: SYS_PROMPT }] },
+        contents: history
+      };
+
+      const data = await fetchWithRetry(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || 'Unable to respond. Please try again.';
-      setMsgs(p => [...p, { role:'assistant', content:reply }]);
-    } catch {
-      setMsgs(p => [...p, { role:'assistant', content:'Connection error. Please try again.' }]);
+
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to respond. Please try again.";
+      setMsgs(p => [...p, { role: "assistant", content: reply }]);
+    } catch (err) {
+      setMsgs(p => [...p, { role: "assistant", content: "Connection error. Please try again." }]);
     }
     setLoading(false);
   };
+
 
   return (
     <>
