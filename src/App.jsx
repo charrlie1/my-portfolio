@@ -30,7 +30,7 @@ Be concise, rigorous, and professional. Keep answers under 3 sentences unless te
 const AiChat = () => {
   const [open, setOpen]       = useState(false);
   const [visible, setVisible] = useState(false);
-  const [msgs, setMsgs]       = useState([{ role:'assistant', content:"Hello. I'm Charles's AI assistant — ask me about his research, publications, or engineering projects." }]);
+  const [msgs, setMsgs]       = useState([{ role:'assistant', content:"Hello. I'm Charles's AI assistant — ask me about his research interests, publications, or engineering projects." }]);
   const [input, setInput]     = useState('');
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
